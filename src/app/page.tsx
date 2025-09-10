@@ -25,18 +25,19 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAdvocates = useCallback(async (page: number = 1, search: string = "") => {
+  const fetchAdvocates = useCallback(async (page: number = 1, search: string = "", limit?: number) => {
     setLoading(true);
     setError(null);
     
     try {
+      const currentLimit = limit || pagination.limit;
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: pagination.limit.toString(),
+        limit: currentLimit.toString(),
         ...(search && { search })
       });
       
-      console.log("fetching advocates...", { page, search });
+      console.log("fetching advocates...", { page, search, limit: currentLimit });
       const response = await fetch(`/api/advocates?${params}`);
       
       if (!response.ok) {
@@ -52,7 +53,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.limit]);
+  }, []);
 
   useEffect(() => {
     fetchAdvocates(1, searchTerm);
@@ -61,12 +62,10 @@ export default function Home() {
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSearchTerm = e.target.value;
     setSearchTerm(newSearchTerm);
-    document.getElementById("search-term")!.innerHTML = newSearchTerm;
   };
 
   const onResetClick = () => {
     setSearchTerm("");
-    document.getElementById("search-term")!.innerHTML = "";
   };
 
   const handlePageChange = (newPage: number) => {
@@ -76,7 +75,7 @@ export default function Home() {
   const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLimit = parseInt(e.target.value);
     setPagination(prev => ({ ...prev, limit: newLimit }));
-    fetchAdvocates(1, searchTerm);
+    fetchAdvocates(1, searchTerm, newLimit);
   };
 
   return (
@@ -86,7 +85,7 @@ export default function Home() {
       <div className="mb-8">
         <p className="text-lg font-medium text-gray-700 mb-2">Search</p>
         <p className="text-sm text-gray-600 mb-4">
-          Searching for: <span id="search-term" className="font-semibold text-blue-600"></span>
+          Searching for: <span className="font-semibold text-blue-600">{searchTerm}</span>
         </p>
         <div className="flex gap-4 items-center">
           <input 
